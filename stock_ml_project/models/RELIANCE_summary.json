@@ -1,0 +1,107 @@
+{
+  "stock": "RELIANCE",
+  "best_model_name": "XGBoost",
+  "feature_cols": [
+    "RSI_14",
+    "MACD_Hist",
+    "MACD_Line",
+    "Dist_SMA_10",
+    "Dist_SMA_50",
+    "SMA_Cross",
+    "ROC_10",
+    "ROC_5",
+    "Stoch_Oscillator",
+    "BB_PctB",
+    "BB_Bandwidth",
+    "NATR",
+    "Historical_Vol_20",
+    "Volume_Ratio",
+    "Nifty_Return",
+    "Nifty_Vol_20",
+    "Alpha_vs_Nifty",
+    "Regime_Code",
+    "Regime_Prob_Bullish",
+    "Regime_Prob_Bearish",
+    "Sentiment_Polarity"
+  ],
+  "threshold": 0.008,
+  "train_samples": 1309,
+  "test_samples": 281,
+  "models_performance": {
+    "Logistic Regression": {
+      "accuracy": 0.4769,
+      "precision_macro": 0.3736,
+      "recall_macro": 0.3703,
+      "f1_macro": 0.3601,
+      "f1_weighted": 0.4475,
+      "roc_auc": 0.5501,
+      "confusion_matrix": [
+        [
+          11,
+          48,
+          16
+        ],
+        [
+          17,
+          110,
+          26
+        ],
+        [
+          8,
+          32,
+          13
+        ]
+      ]
+    },
+    "Random Forest": {
+      "accuracy": 0.4804,
+      "precision_macro": 0.3866,
+      "recall_macro": 0.3752,
+      "f1_macro": 0.3719,
+      "f1_weighted": 0.452,
+      "roc_auc": 0.5662,
+      "confusion_matrix": [
+        [
+          14,
+          52,
+          9
+        ],
+        [
+          25,
+          109,
+          19
+        ],
+        [
+          8,
+          33,
+          12
+        ]
+      ]
+    },
+    "XGBoost": {
+      "accuracy": 0.5374,
+      "precision_macro": 0.4227,
+      "recall_macro": 0.3859,
+      "f1_macro": 0.363,
+      "f1_weighted": 0.4645,
+      "roc_auc": 0.5404,
+      "confusion_matrix": [
+        [
+          7,
+          59,
+          9
+        ],
+        [
+          10,
+          134,
+          9
+        ],
+        [
+          4,
+          39,
+          10
+        ]
+      ]
+    }
+  }
+}

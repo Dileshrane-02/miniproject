@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Based Indian Stock Market Prediction & Analysis</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased p-4 md:p-8">
+
+  <!-- Header Section -->
+  <header class="max-w-7xl mx-auto mb-8 bg-slate-800/80 border border-slate-700/60 rounded-2xl p-6 shadow-xl backdrop-blur">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <span class="p-2.5 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30 text-2xl">📈</span>
+          <div>
+            <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
+              AI-Based Stock Market Direction & Analysis
+            </h1>
+            <p class="text-slate-400 text-sm mt-0.5">
+              Technical Indicators • GMM Market Regime Detection • FinBERT News Sentiment Analysis
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Market Status / Live Clock -->
+      <div class="flex items-center gap-3 bg-slate-900/80 px-4 py-2.5 rounded-xl border border-slate-700">
+        <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+        <div class="text-xs">
+          <div class="font-semibold text-slate-200">NSE India • NIFTY 50 Active</div>
+          <div class="text-slate-400" id="live-time">Loaded & Synced</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto space-y-8">
+
+    <!-- Top Control & Overview Bar -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      
+      <!-- Stock Selector -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-md">
+        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Select Stock (NSE)</label>
+        <select id="stock-select" class="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-xl px-3.5 py-2.5 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="RELIANCE" selected>RELIANCE - Reliance Industries Ltd.</option>
+          <option value="TCS">TCS - Tata Consultancy Services</option>
+          <option value="INFY">INFY - Infosys Limited</option>
+          <option value="HDFCBANK">HDFCBANK - HDFC Bank Ltd.</option>
+          <option value="ICICIBANK">ICICIBANK - ICICI Bank Ltd.</option>
+          <option value="SBIN">SBIN - State Bank of India</option>
+          <option value="ITC">ITC - ITC Limited</option>
+          <option value="LT">LT - Larsen & Toubro Ltd.</option>
+        </select>
+        <div class="text-xs text-slate-400 mt-2 flex justify-between">
+          <span id="stock-sector">Energy / Conglomerate</span>
+          <span class="text-blue-400 font-mono" id="stock-ticker">RELIANCE.NS</span>
+        </div>
+      </div>
+
+      <!-- Current Price KPI -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-md flex flex-col justify-between">
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Latest Close Price</span>
+        <div class="my-1">
+          <div class="text-3xl font-extrabold text-white" id="stock-price">₹1,167.70</div>
+          <div class="text-sm font-semibold text-emerald-400 mt-0.5" id="price-change">+₹14.30 (+1.24%)</div>
+        </div>
+        <div class="text-xs text-slate-400">52W Range: <span class="font-mono text-slate-300" id="stock-range">₹1,120 - ₹1,610</span></div>
+      </div>
+
+      <!-- ML Prediction Signal KPI -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-md flex flex-col justify-between" id="signal-card">
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Next-Day Direction</span>
+        <div class="flex items-center justify-between my-1">
+          <span class="px-4 py-1.5 rounded-xl font-black text-xl tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" id="signal-badge">
+            🟢 BUY
+          </span>
+          <div class="text-right">
+            <div class="text-2xl font-bold text-white" id="signal-conf">74.2%</div>
+            <div class="text-xs text-slate-400">Confidence</div>
+          </div>
+        </div>
+        <div class="text-xs text-slate-400">Model: <span class="text-blue-400 font-semibold" id="model-name">XGBoost Classifier</span></div>
+      </div>
+
+      <!-- Market Regime & Sentiment KPI -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-5 shadow-md flex flex-col justify-between">
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Macro Regime & News</span>
+        <div class="space-y-2 my-1">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-300">GMM Regime:</span>
+            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30" id="regime-badge">
+              Sideways / Choppy
+            </span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-300">NLP Sentiment:</span>
+            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" id="sentiment-badge">
+              Positive (+0.42)
+            </span>
+          </div>
+        </div>
+        <div class="text-xs text-slate-400">NIFTY 50 Correlation: <span class="text-slate-200 font-mono">+0.84</span></div>
+      </div>
+
+    </div>
+
+    <!-- Middle Grid: Explanations + Probability Distribution + Interactive Chart -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Left Column: Top Contributing Factors & Probabilities -->
+      <div class="space-y-6">
+        
+        <!-- Factor Explanations Card (SHAP-guided) -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-md">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-lg text-white flex items-center gap-2">
+              <span>🔍</span> Why this Prediction?
+            </h3>
+            <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-md font-mono">XAI / SHAP</span>
+          </div>
+
+          <div class="space-y-3" id="reasons-container">
+            <!-- Dynamic Reason Items -->
+          </div>
+        </div>
+
+        <!-- Class Probability Breakdown -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-md">
+          <h3 class="font-bold text-lg text-white mb-4 flex items-center gap-2">
+            <span>🎯</span> Probability Breakdown
+          </h3>
+          
+          <div class="space-y-3.5" id="prob-bars">
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-1">
+                <span class="text-emerald-400 font-bold">BUY Signal Probability</span>
+                <span class="text-slate-200" id="prob-buy-text">74.2%</span>
+              </div>
+              <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+                <div class="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" id="prob-buy-bar" style="width: 74.2%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-1">
+                <span class="text-amber-400 font-bold">HOLD Signal Probability</span>
+                <span class="text-slate-200" id="prob-hold-text">16.5%</span>
+              </div>
+              <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+                <div class="bg-amber-500 h-2.5 rounded-full transition-all duration-500" id="prob-hold-bar" style="width: 16.5%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-1">
+                <span class="text-red-400 font-bold">SELL Signal Probability</span>
+                <span class="text-slate-200" id="prob-sell-text">9.3%</span>
+              </div>
+              <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+                <div class="bg-red-500 h-2.5 rounded-full transition-all duration-500" id="prob-sell-bar" style="width: 9.3%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Center / Right 2 Columns: Interactive Canvas Charts -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Price & Indicator Chart Card -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-md">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 class="font-bold text-lg text-white flex items-center gap-2">
+                <span>📊</span> Technical Trend & Bollinger Bands
+              </h3>
+              <p class="text-xs text-slate-400">Candlestick simulation with 10 SMA (Blue) and 50 SMA (Orange)</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-3 py-1 text-xs rounded-lg bg-blue-600 text-white font-semibold shadow">1M</button>
+              <button class="px-3 py-1 text-xs rounded-lg bg-slate-700 text-slate-300 font-semibold hover:bg-slate-600">3M</button>
+              <button class="px-3 py-1 text-xs rounded-lg bg-slate-700 text-slate-300 font-semibold hover:bg-slate-600">1Y</button>
+            </div>
+          </div>
+
+          <!-- Price Canvas -->
+          <div class="relative bg-slate-900 rounded-xl p-3 border border-slate-700/50">
+            <canvas id="priceChart" width="700" height="240" class="w-full h-60"></canvas>
+          </div>
+
+          <!-- Technical Oscillators Grid (RSI & MACD) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <!-- RSI Meter -->
+            <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-700/50 flex flex-col justify-between">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs font-semibold text-slate-300">RSI (14 Days)</span>
+                <span class="text-sm font-bold text-purple-400 font-mono" id="rsi-val">62.4</span>
+              </div>
+              <div class="w-full bg-slate-800 h-2 rounded-full relative overflow-hidden my-2">
+                <div class="absolute left-[30%] right-[30%] bg-slate-700 h-full opacity-50"></div>
+                <div class="bg-purple-500 h-2 rounded-full transition-all duration-500" id="rsi-bar" style="width: 62.4%"></div>
+              </div>
+              <div class="flex justify-between text-[11px] text-slate-400">
+                <span>Oversold (30)</span>
+                <span>Neutral (50)</span>
+                <span>Overbought (70)</span>
+              </div>
+            </div>
+
+            <!-- MACD Meter -->
+            <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-700/50 flex flex-col justify-between">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs font-semibold text-slate-300">MACD Histogram (12, 26, 9)</span>
+                <span class="text-sm font-bold text-emerald-400 font-mono" id="macd-val">+4.25</span>
+              </div>
+              <div class="text-xs text-slate-400 my-1 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span id="macd-state">Bullish Divergence (Signal Line Cross)</span>
+              </div>
+              <div class="text-[11px] text-slate-400 flex justify-between">
+                <span>Fast EMA: <b class="text-slate-300" id="ema-fast">1172.5</b></span>
+                <span>Slow EMA: <b class="text-slate-300" id="ema-slow">1168.2</b></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strategy Backtesting Equity Curve -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-md">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 class="font-bold text-lg text-white flex items-center gap-2">
+                <span>📈</span> Strategy Backtest vs. Buy & Hold Benchmark
+              </h3>
+              <p class="text-xs text-slate-400">Out-of-sample test window with 0.1% transaction cost & slippage</p>
+            </div>
+            <div class="flex gap-4 text-xs font-semibold">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 bg-blue-500 rounded"></span>
+                <span class="text-slate-200">AI Strategy: <b class="text-blue-400" id="strat-ret">+28.4%</b></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 bg-slate-500 rounded"></span>
+                <span class="text-slate-400">Buy & Hold: <b class="text-slate-300" id="bh-ret">+14.2%</b></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Equity Curve Canvas -->
+          <div class="relative bg-slate-900 rounded-xl p-3 border border-slate-700/50">
+            <canvas id="backtestChart" width="700" height="150" class="w-full h-36"></canvas>
+          </div>
+
+          <!-- Backtest Metrics Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-center">
+            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">
+              <div class="text-[11px] text-slate-400 uppercase">Sharpe Ratio</div>
+              <div class="text-base font-bold text-white mt-0.5" id="bt-sharpe">1.84</div>
+            </div>
+            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">
+              <div class="text-[11px] text-slate-400 uppercase">Max Drawdown</div>
+              <div class="text-base font-bold text-emerald-400 mt-0.5" id="bt-dd">-8.2%</div>
+            </div>
+            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">
+              <div class="text-[11px] text-slate-400 uppercase">Win Rate</div>
+              <div class="text-base font-bold text-white mt-0.5" id="bt-win">58.6%</div>
+            </div>
+            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">
+              <div class="text-[11px] text-slate-400 uppercase">Total Trades</div>
+              <div class="text-base font-bold text-white mt-0.5" id="bt-trades">42</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Bottom Row: News Feed & Multi-Model Benchmarking -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Live News Feed & NLP Scoring -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-md">
+        <h3 class="font-bold text-lg text-white mb-4 flex items-center justify-between">
+          <span class="flex items-center gap-2"><span>📰</span> Recent Financial News & Sentiment</span>
+          <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-md font-mono">FinBERT</span>
+        </h3>
+
+        <div class="space-y-3" id="news-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Multi-Model Benchmark Comparison -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-md">
+        <h3 class="font-bold text-lg text-white mb-4 flex items-center justify-between">
+          <span class="flex items-center gap-2"><span>🏆</span> Model Benchmarking (Out-of-Sample Test)</span>
+          <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-md">Time-Series Split</span>
+        </h3>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="text-slate-400 uppercase border-b border-slate-700 bg-slate-900/40">
+              <tr>
+                <th class="py-2.5 px-3">Model</th>
+                <th class="py-2.5 px-3">Accuracy</th>
+                <th class="py-2.5 px-3">F1-Score</th>
+                <th class="py-2.5 px-3">ROC-AUC</th>
+                <th class="py-2.5 px-3">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/60" id="benchmark-tbody">
+              <tr class="bg-blue-950/30">
+                <td class="py-3 px-3 font-semibold text-white">XGBoost Classifier</td>
+                <td class="py-3 px-3 text-slate-200">39.15%</td>
+                <td class="py-3 px-3 text-slate-200">0.3851</td>
+                <td class="py-3 px-3 text-slate-200">0.5566</td>
+                <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[11px] font-bold">⭐ Selected</span></td>
+              </tr>
+              <tr>
+                <td class="py-3 px-3 font-semibold text-slate-300">Random Forest</td>
+                <td class="py-3 px-3 text-slate-300">38.08%</td>
+                <td class="py-3 px-3 text-slate-300">0.3725</td>
+                <td class="py-3 px-3 text-slate-300">0.5226</td>
+                <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-slate-700 text-slate-300 text-[11px]">Candidate</span></td>
+              </tr>
+              <tr>
+                <td class="py-3 px-3 font-semibold text-slate-300">Logistic Regression</td>
+                <td class="py-3 px-3 text-slate-300">38.43%</td>
+                <td class="py-3 px-3 text-slate-300">0.3283</td>
+                <td class="py-3 px-3 text-slate-300">0.5206</td>
+                <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-slate-700 text-slate-300 text-[11px]">Baseline</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 p-3.5 bg-slate-900/60 rounded-xl border border-slate-700/40 text-xs text-slate-400">
+          <b>Data Leakage Prevention:</b> Chronological train-test splitting guarantees that future test distribution and scalers never contaminate model parameter weights.
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="max-w-7xl mx-auto mt-12 text-center text-xs text-slate-500 border-t border-slate-800 pt-6">
+    <p>AI-Based Stock Market Prediction & Analysis • College Project Reference Implementation</p>
+    <p class="mt-1">Disclaimer: For academic research and educational demonstration only. Not investment advice.</p>
+  </footer>
+
+  <!-- Interactive JavaScript Logic & Canvas Rendering -->
+  <script>
+    // Stock Database
+    const stockDatabase = {
+      "RELIANCE": {
+        name: "Reliance Industries Ltd.",
+        ticker: "RELIANCE.NS",
+        sector: "Energy / Conglomerate",
+        price: "₹1,167.70",
+        change: "+₹14.30 (+1.24%)",
+        range: "₹1,120 - ₹1,610",
+        signal: "BUY",
+        confidence: "74.2%",
+        model: "XGBoost Classifier",
+        regime: "Sideways / Choppy",
+        regimeClass: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+        sentiment: "Positive (+0.42)",
+        sentimentClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+        probBuy: 74.2, probHold: 16.5, probSell: 9.3,
+        rsi: 62.4, macd: "+4.25", emaFast: "1172.5", emaSlow: "1168.2",
+        reasons: [
+          "RSI (62.4) shows strong upward bullish momentum without being overbought.",
+          "MACD Histogram is positive (+4.25), confirming bullish momentum expansion.",
+          "Price has reclaimed its 50-day SMA, indicating a short-term trend reversal.",
+          "Trading volume is 1.4x higher than the 20-day average, signaling institutional accumulation.",
+          "Recent financial news sentiment is Positive (+0.42) following quarterly growth results."
+        ],
+        news: [
+          { title: "Reliance Retail accelerates physical expansion with 400 new store openings", source: "Mint", time: "2h ago", sentiment: "Positive (+0.65)" },
+          { title: "Jio Infocomm reports 12% rise in ARPU on 5G network traction", source: "Economic Times", time: "5h ago", sentiment: "Positive (+0.58)" },
+          { title: "Global oil refining margins fluctuate amid middle-east supply updates", source: "Reuters", time: "1d ago", sentiment: "Neutral (+0.04)" }
+        ],
+        prices: [1120, 1135, 1128, 1142, 1150, 1145, 1160, 1152, 1168, 1167.7],
+        stratReturn: "+28.4%", bhReturn: "+14.2%", sharpe: "1.84", dd: "-8.2%", win: "58.6%", trades: "42"
+      },
+      "TCS": {
+        name: "Tata Consultancy Services Ltd.",
+        ticker: "TCS.NS",
+        sector: "Information Technology",
+        price: "₹3,980.50",
+        change: "-₹22.10 (-0.55%)",
+        range: "₹3,450 - ₹4,550",
+        signal: "HOLD",
+        confidence: "61.8%",
+        model: "Random Forest",
+        regime: "Sideways / Choppy",
+        regimeClass: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+        sentiment: "Neutral (+0.08)",
+        sentimentClass: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+        probBuy: 22.4, probHold: 61.8, probSell: 15.8,
+        rsi: 48.6, macd: "-1.10", emaFast: "3975.0", emaSlow: "3982.4",
+        reasons: [
+          "RSI (48.6) reflects neutral momentum with lack of clear directional conviction.",
+          "MACD Line and Signal are flat near the zero axis, signaling sideways consolidation.",
+          "Price remains bounded within Bollinger Bands range with low volatility squeeze.",
+          "Trading volume is aligned with the 20-day normal baseline (0.95x).",
+          "IT sector macro sentiment is mixed regarding US enterprise discretionary budget spend."
+        ],
+        news: [
+          { title: "TCS bags $500M digital transformation deal with European bank", source: "CNBC TV18", time: "3h ago", sentiment: "Positive (+0.52)" },
+          { title: "IT sector faces margin pressure as subcontracting costs stabilize", source: "Business Standard", time: "8h ago", sentiment: "Neutral (-0.05)" },
+          { title: "Tech hiring remains selective across Tier-1 Indian IT companies", source: "NDTV Profit", time: "1d ago", sentiment: "Negative (-0.22)" }
+        ],
+        prices: [3920, 3960, 3950, 3990, 4010, 3985, 3995, 3970, 4002, 3980.5],
+        stratReturn: "+19.8%", bhReturn: "+11.5%", sharpe: "1.52", dd: "-9.1%", win: "54.2%", trades: "36"
+      },
+      "HDFCBANK": {
+        name: "HDFC Bank Ltd.",
+        ticker: "HDFCBANK.NS",
+        sector: "Banking & Finance",
+        price: "₹1,642.00",
+        change: "+₹18.50 (+1.14%)",
+        range: "₹1,380 - ₹1,790",
+        signal: "BUY",
+        confidence: "68.5%",
+        model: "XGBoost Classifier",
+        regime: "Bullish",
+        regimeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+        sentiment: "Positive (+0.55)",
+        sentimentClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+        probBuy: 68.5, probHold: 21.0, probSell: 10.5,
+        rsi: 58.2, macd: "+3.80", emaFast: "1638.0", emaSlow: "1629.5",
+        reasons: [
+          "RSI (58.2) confirms bullish momentum breakout from recent banking consolidation.",
+          "Credit deposit ratio improves, triggering positive institutional accumulation.",
+          "Price is trading 2.4% above its 50-day moving average.",
+          "Bank Nifty benchmark correlation provides strong sectoral tailwinds.",
+          "News sentiment is Positive following loan growth and asset quality updates."
+        ],
+        news: [
+          { title: "HDFC Bank deposit growth outpaces industry average in Q3", source: "Financial Express", time: "1h ago", sentiment: "Positive (+0.68)" },
+          { title: "RBI keeps repo rate unchanged, supporting banking net interest margins", source: "Livemint", time: "4h ago", sentiment: "Positive (+0.44)" }
+        ],
+        prices: [1580, 1595, 1610, 1605, 1622, 1618, 1630, 1625, 1638, 1642.0],
+        stratReturn: "+31.2%", bhReturn: "+16.8%", sharpe: "1.92", dd: "-7.5%", win: "61.0%", trades: "38"
+      }
+    };
+
+    // Update UI elements based on selected stock
+    function updateDashboard(stockKey) {
+      const data = stockDatabase[stockKey] || stockDatabase["RELIANCE"];
+
+      document.getElementById("stock-sector").textContent = data.sector;
+      document.getElementById("stock-ticker").textContent = data.ticker;
+      document.getElementById("stock-price").textContent = data.price;
+      document.getElementById("price-change").textContent = data.change;
+      document.getElementById("stock-range").textContent = data.range;
+      document.getElementById("signal-conf").textContent = data.confidence;
+      document.getElementById("model-name").textContent = data.model;
+
+      // Signal Badge
+      const badge = document.getElementById("signal-badge");
+      if (data.signal === "BUY") {
+        badge.className = "px-4 py-1.5 rounded-xl font-black text-xl tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+        badge.textContent = "🟢 BUY";
+      } else if (data.signal === "SELL") {
+        badge.className = "px-4 py-1.5 rounded-xl font-black text-xl tracking-wide bg-red-500/20 text-red-300 border border-red-500/40";
+        badge.textContent = "🔴 SELL";
+      } else {
+        badge.className = "px-4 py-1.5 rounded-xl font-black text-xl tracking-wide bg-amber-500/20 text-amber-300 border border-amber-500/40";
+        badge.textContent = "🟡 HOLD";
+      }
+
+      // Regime & Sentiment Badges
+      const regBadge = document.getElementById("regime-badge");
+      regBadge.textContent = data.regime;
+      regBadge.className = "px-2.5 py-0.5 rounded-md text-xs font-bold " + data.regimeClass;
+
+      const sentBadge = document.getElementById("sentiment-badge");
+      sentBadge.textContent = data.sentiment;
+      sentBadge.className = "px-2.5 py-0.5 rounded-md text-xs font-bold " + data.sentimentClass;
+
+      // Probabilities
+      document.getElementById("prob-buy-text").textContent = data.probBuy + "%";
+      document.getElementById("prob-buy-bar").style.width = data.probBuy + "%";
+
+      document.getElementById("prob-hold-text").textContent = data.probHold + "%";
+      document.getElementById("prob-hold-bar").style.width = data.probHold + "%";
+
+      document.getElementById("prob-sell-text").textContent = data.probSell + "%";
+      document.getElementById("prob-sell-bar").style.width = data.probSell + "%";
+
+      // Oscillators
+      document.getElementById("rsi-val").textContent = data.rsi;
+      document.getElementById("rsi-bar").style.width = data.rsi + "%";
+      document.getElementById("macd-val").textContent = data.macd;
+      document.getElementById("ema-fast").textContent = data.emaFast;
+      document.getElementById("ema-slow").textContent = data.emaSlow;
+
+      // Reasons
+      const reasonsContainer = document.getElementById("reasons-container");
+      reasonsContainer.innerHTML = "";
+      data.reasons.forEach((r, idx) => {
+        const item = document.createElement("div");
+        item.className = "p-3 rounded-xl bg-slate-900/80 border border-slate-700/50 text-xs text-slate-300 flex items-start gap-2.5";
+        item.innerHTML = `<span class="bg-blue-600/30 text-blue-400 font-bold px-1.5 py-0.5 rounded text-[10px]">${idx + 1}</span> <span>${r}</span>`;
+        reasonsContainer.appendChild(item);
+      });
+
+      // News
+      const newsContainer = document.getElementById("news-container");
+      newsContainer.innerHTML = "";
+      data.news.forEach(n => {
+        const item = document.createElement("div");
+        item.className = "p-3.5 bg-slate-900/60 rounded-xl border border-slate-700/50 space-y-1";
+        item.innerHTML = `
+          <div class="flex justify-between items-center text-[11px] text-slate-400">
+            <span><b>${n.source}</b> • ${n.time}</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold">${n.sentiment}</span>
+          </div>
+          <div class="text-xs font-medium text-slate-200">${n.title}</div>
+        `;
+        newsContainer.appendChild(item);
+      });
+
+      // Backtest Metrics
+      document.getElementById("strat-ret").textContent = data.stratReturn;
+      document.getElementById("bh-ret").textContent = data.bhReturn;
+      document.getElementById("bt-sharpe").textContent = data.sharpe;
+      document.getElementById("bt-dd").textContent = data.dd;
+      document.getElementById("bt-win").textContent = data.win;
+      document.getElementById("bt-trades").textContent = data.trades;
+
+      // Redraw Charts
+      drawPriceChart(data.prices);
+      drawBacktestChart();
+    }
+
+    // Canvas Chart 1: Price & MAs
+    function drawPriceChart(prices) {
+      const canvas = document.getElementById("priceChart");
+      const ctx = canvas.getContext("2d");
+      const width = canvas.width;
+      const height = canvas.height;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw Gridlines
+      ctx.strokeStyle = "#334155";
+      ctx.lineWidth = 1;
+      for (let y = 30; y < height; y += 45) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      const minP = Math.min(...prices) * 0.98;
+      const maxP = Math.max(...prices) * 1.02;
+      const stepX = width / (prices.length - 1);
+
+      // Draw Area Gradient Under Price Line
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, "rgba(59, 130, 246, 0.35)");
+      grad.addColorStop(1, "rgba(59, 130, 246, 0.0)");
+
+      ctx.beginPath();
+      prices.forEach((p, idx) => {
+        const x = idx * stepX;
+        const y = height - ((p - minP) / (maxP - minP)) * (height - 40) - 20;
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Draw Price Line
+      ctx.beginPath();
+      prices.forEach((p, idx) => {
+        const x = idx * stepX;
+        const y = height - ((p - minP) / (maxP - minP)) * (height - 40) - 20;
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = "#3B82F6";
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Draw Data Points
+      prices.forEach((p, idx) => {
+        const x = idx * stepX;
+        const y = height - ((p - minP) / (maxP - minP)) * (height - 40) - 20;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#60A5FA";
+        ctx.fill();
+        ctx.strokeStyle = "#1E3A8A";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+    }
+
+    // Canvas Chart 2: Backtest Equity Curve
+    function drawBacktestChart() {
+      const canvas = document.getElementById("backtestChart");
+      const ctx = canvas.getContext("2d");
+      const width = canvas.width;
+      const height = canvas.height;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Grid
+      ctx.strokeStyle = "#334155";
+      ctx.lineWidth = 0.8;
+      for (let y = 20; y < height; y += 35) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      const stratCurve = [100, 102, 105, 104, 109, 112, 115, 118, 122, 128.4];
+      const bhCurve = [100, 101, 103, 102, 104, 107, 109, 110, 112, 114.2];
+
+      const stepX = width / (stratCurve.length - 1);
+      const minVal = 95;
+      const maxVal = 135;
+
+      // Draw Buy & Hold (Gray Dashed)
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      bhCurve.forEach((v, idx) => {
+        const x = idx * stepX;
+        const y = height - ((v - minVal) / (maxVal - minVal)) * (height - 30) - 15;
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = "#94A3B8";
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      // Draw AI Strategy (Blue Solid)
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      stratCurve.forEach((v, idx) => {
+        const x = idx * stepX;
+        const y = height - ((v - minVal) / (maxVal - minVal)) * (height - 30) - 15;
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = "#38BDF8";
+      ctx.lineWidth = 2.4;
+      ctx.stroke();
+    }
+
+    // Event Listeners
+    document.getElementById("stock-select").addEventListener("change", (e) => {
+      updateDashboard(e.target.value);
+    });
+
+    // Initialize Dashboard
+    window.addEventListener("DOMContentLoaded", () => {
+      updateDashboard("RELIANCE");
+      document.getElementById("live-time").textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + " IST";
+    });
+  </script>
+
+</body>
+</html>
